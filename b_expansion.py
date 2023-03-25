@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
-
 from typing import Iterator, Iterable
 import functools
 import re
-
 # sys.setrecursionlimit(30)       # デバッグ用
+
 
 def __cstream(istr: Iterator[str]) -> Iterator[str]:
     ''' ストリーム（イテレータ）から１文字ずつ取得するイテレータ。
@@ -57,8 +55,9 @@ def __is_onebracketed(sdata: str) -> bool:
         ex) "{A,B,C{1,2,3}}: True
             "{A,B,C}{X,Y,Z}: False
     '''
-    return sdata[0] == '{' and sdata[-1] == '}' and\
-                len(sdata) == len(__get_bracketed(iter(sdata[1:]))) + 1
+    return sdata[0] == '{'\
+        and sdata[-1] == '}'\
+        and len(sdata) == len(__get_bracketed(iter(sdata[1:]))) + 1
 
 
 def __expand_range(moto: str) -> list[str]:
@@ -122,7 +121,7 @@ def __expand_or(sdata: str) -> list[str]:
     items.append("".join(part))
     if len(items) <= 1:         # 分割（展開）されなかった
         return []
-    
+
     ''' 分割された文字列をさらに展開する
         ['A','B','{Q,W}{1,2}'] --> ['A','B','Q1','Q2','W1','W2']
     '''
@@ -142,7 +141,6 @@ def __expand_mul(sdata: str) -> list[str]:
                         ['Ax', 'Ay', 'Bx', 'By', 'Cx', 'Cy']
         '''
         return [s1 + s2 for s1 in m1 for s2 in m2]
-
 
     def __expand_mul2(sdata: str) -> list[str]:
         ''' 文字列の {} による分割を行う '''
@@ -199,11 +197,15 @@ def __expand_mul(sdata: str) -> list[str]:
                 while newitems:
                     w2 = newitems.pop()     # 左カッコのブロックを掘り出すまで、
                     wlist.append(w2)        # ワークに積む
-                    if _btype(w2) == 'L':   # 始まりの左カッコのブロック、あり
+
+                    # 始まりの左カッコのブロック、あり
+                    if _btype(w2) == 'L':
                         newitems.append("".join(wlist[::-1]))
                         break
-                else:       # 始まりの左カッコのブロック、なし
-                            # （右カッコブロックは単なるデータだった）
+
+                # 始まりの左カッコのブロック、なし
+                # （右カッコブロックは単なるデータだった）
+                else:
                     newitems.extend(wlist[::-1])
 
                 continue
@@ -248,9 +250,8 @@ def __expand_mul(sdata: str) -> list[str]:
 def __b_expansion(sdata: str) -> list[str]:
     ''' ブレース展開を行う '''
 
-    if not '{' in sdata:    # { が一つもない
+    if '{' not in sdata:    # { が一つもない
         return [sdata]          # 展開不要で終了
-
 
     ''' 全体が {} で囲われた文字列を展開する '''
     if __is_onebracketed(sdata):      # 全体が {} 囲われている場合
