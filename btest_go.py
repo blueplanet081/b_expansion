@@ -1,18 +1,30 @@
 import sys
 import subprocess
 
+sep = "'''"
+
 for line in sys.stdin:
-    text = line.strip()
-    if text.startswith('#'):
-        print(text)
-    elif text and not text.startswith(' '):
-        testcmd = "echo " + line.rstrip()
+    stext = line.strip()
+
+    # 頭が # はコメント行
+    if stext.startswith('#'):
+        print(stext)
+    
+    # 空行と、頭がスペースの行は読み飛ばす
+    elif stext and not stext.startswith(' '):
+        testcmd = "echo " + stext
         print(testcmd)
         subprocess.run('bash -c ' + "'''" + testcmd + "'''", shell=True)
-        # print()
-        testcmd2 = "btest.py " + "'''" + line.rstrip() + "'''"
+
+        sep = '"'
+        if '"' in stext:
+            sep = "'"
+            if "'" in stext:
+                sep = "'''"
+        print("btest.py " + sep + stext + sep)
+
+        testcmd2 = "btest.py " + "'''" + stext + "'''"
         # testcmd2 = "btest.py"
-        print(testcmd2)
         # print(__file__)
         subprocess.run('python3 ' + testcmd2, shell=True)
         print()
