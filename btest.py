@@ -10,7 +10,7 @@ if len(sys.argv) > 1:
     items = b_expansion(sdata)
 
     for it in items:
-        print(it)
+        print(it, end=" ")
 
 else:
     print("b_extension 試験用プログラム")
