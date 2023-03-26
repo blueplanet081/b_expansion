@@ -275,16 +275,19 @@ def b_expansion(sdata: str) -> list[str]:
     def __clean(sdata: str) -> str:
         ''' 文字列中の、単独の " は削除、\" は単体の " に置き換える '''
         if '"' in sdata:
-            return "".join(['' if c == '"' else
-                            '"' if c == '\\"' else
-                            c for c in __cstream(iter(sdata)) ])
+            return "".join(['' if c == '"'
+                            else '"' if c == '\\"'
+                            else '' if c == '\\'
+                            # else c for c in sdata])
+                            else c for c in __cstream(iter(sdata)) ])
         return sdata
 
     # ブレース展開を行う
     ret = __b_expansion(sdata)
 
-    # 文字列中の、単独の " は削除、\" は単体の " に置き換える
-    return list(map(__clean, ret))
+    # 文字列中の、単独の " は削除、\" は単体の " に置き換え、
+    # 空アイテムを削除する
+    return [i for i in (map(__clean, ret)) if i]
 
 
 if __name__ == '__main__':
