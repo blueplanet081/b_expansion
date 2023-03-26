@@ -273,21 +273,21 @@ def b_expansion(sdata: str) -> list[str]:
     ''' ブレース展開を行い、結果を文字列の配列で返す '''
 
     def __clean(sdata: str) -> str:
-        ''' 文字列中の、単独の " は削除、\" は単体の " に置き換える '''
-        if '"' in sdata:
-            return "".join(['' if c == '"'
-                            else '"' if c == '\\"'
-                            else '' if c == '\\'
-                            # else c for c in sdata])
-                            else c for c in __cstream(iter(sdata)) ])
-        return sdata
+        ''' 文字列中の、単独の " は削除、\" は単体の " に置き換える。単体の \ は削除する。 '''
+        return "".join(['' if c == '"'
+                        else '"' if c == '\\"'
+                        else '' if c == "\\"
+                        else c[1:] if c[0] == "\\"
+                        else c for c in __cstream(iter(sdata))])
 
     # ブレース展開を行う
     ret = __b_expansion(sdata)
 
-    # 文字列中の、単独の " は削除、\" は単体の " に置き換え、
     # 空アイテムを削除する
-    return [i for i in (map(__clean, ret)) if i]
+    ret = [i for i in ret if i]
+
+    # 文字列中の、単独の " は削除、\" は単体の " に置き換える。単体の \ は削除する。
+    return list(map(__clean, ret))
 
 
 if __name__ == '__main__':
@@ -332,3 +332,47 @@ if __name__ == '__main__':
     print()
     for it in items:
         print(it)
+
+    def x__clean(sdata: str) -> str:
+        ''' 文字列中の、単独の " は削除、\" は単体の " に置き換える '''
+        print(f'{sdata=}')
+        wt: list[str] = []
+        for c in __cstream(iter(sdata)):
+            if c == '"':
+                wc = ''
+            elif c == '\\"':
+                wc = '"'
+            elif c == '\\':
+                wc = ''
+            elif c[0] == '\\':
+                wc = c[1]
+            else:
+                wc = c
+            print(f'[{c}]')
+            print(f'->[{wc}]')
+            wt.append(wc)
+        ret = "".join(wt)
+        return ret
+        print(f'[()]')
+
+        if '"' in sdata:
+            return "".join(['' if c == '"'
+                            else '"' if c == '\\"'
+                            else '' if c == '\\'
+                            else c[1] if c[0] == '\\'
+                            # else c for c in sdata])
+                            else c for c in __cstream(iter(sdata)) ])
+        print(f'{sdata=}')
+        return sdata
+
+    text = '''ab\cd\\e\"fxy\\"z'''
+    for c in __cstream(iter(text)):
+        print(f'[{c}]')
+    print("1:", text)
+    print("2:", x__clean(text))
+
+    # text = '''\\'''
+    # for c in __cstream(iter(text)):
+    #     print(f'[{c}]')
+    # print("1:", text)
+    # print("2:", x__clean(text))
