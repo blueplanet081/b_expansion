@@ -1,6 +1,8 @@
 from typing import Iterator, Iterable
 import functools
 import re
+
+# import sys
 # sys.setrecursionlimit(30)       # デバッグ用
 
 
