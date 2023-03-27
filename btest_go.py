@@ -12,18 +12,19 @@ for line in sys.stdin:
     
     # 空行と、頭がスペースの行は読み飛ばす
     elif stext and not stext.startswith(' '):
-        testcmd = "echo " + stext
-        print(testcmd)
-        subprocess.run('bash -c ' + "'''" + testcmd + "'''", shell=True)
-
         sep = '"'
         if '"' in stext:
             sep = "'"
             if "'" in stext:
                 sep = "'''"
+
+        testcmd = "echo " + stext
+        print(testcmd)
+        subprocess.run('bash -c ' + sep + testcmd + sep, shell=True)
+
         print("btest.py " + sep + stext + sep)
 
-        testcmd2 = "btest.py " + "'''" + stext + "'''"
+        testcmd2 = "btest.py " + sep + stext + sep
         # testcmd2 = "btest.py"
         # print(__file__)
         subprocess.run('python3 ' + testcmd2, shell=True)
