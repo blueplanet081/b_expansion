@@ -15,12 +15,13 @@ for line in sys.stdin:
         sep = '"'
         if '"' in stext:
             sep = "'"
-            if "'" in stext:
-                sep = "'''"
+            # if "'" in stext:
+            #     sep = "'''"
+            #     print("3!!")
 
         testcmd = "echo " + stext
         print(testcmd)
-        subprocess.run('bash -c ' + sep + testcmd + sep, shell=True)
+        subprocess.run('bash -c ' + "'''" + testcmd + "'''", shell=True)
 
         print("btest.py " + sep + stext + sep)
 

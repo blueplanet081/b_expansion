@@ -19,17 +19,50 @@ def __cstream(istr: Iterator[str]) -> Iterator[str]:
             yield chr
 
 
-def __get_quoted(istr: Iterator[str]) -> str:
-    ''' ダブルクォートで囲まれた文字列を取得する。
-        （末尾のダブルクォートを含む）
+def __get_quoted(istr: Iterator[str], qchar: str = '"') -> str:
+    ''' ダブルクォート、シングルクォートで囲まれた文字列を取得する。
+        （末尾のダブルクォート、シングルクォートを含む）
         ldata = 'abc"XYZ\\"QQQ"nnn'
         get_quoted(iter(ldata[4:]))='XYZ\\"QQQ"'
     '''
     item: list[str] = []
     for chr in __cstream(istr):
-        item.append(chr)
-        if chr == '"':
+        # if chr == '"':
+        if chr == qchar:
+            item.append(chr)
             break
+        if chr == '"' or chr == "'":
+            chr = '\\' + chr
+        if qchar == '"' and chr == "\\'":
+            chr = '\\' + chr
+        if qchar == "'" and chr == '\\"':
+            chr = '\\' + chr
+
+        item.append(chr)
+
+    return "".join(item)
+
+
+def __get_singlequoted(istr: Iterator[str]) -> str:
+    ''' シングルクォートで囲まれた文字列を取得する。
+        （末尾のダブルクォート、シングルクォートを含む）
+        ldata = 'abc"XYZ\\"QQQ"nnn'
+        get_quoted(iter(ldata[4:]))='XYZ\\"QQQ"'
+    '''
+    # print("__get_singlequoted()")
+    item: list[str] = []
+    for chr in istr:
+        # print("chr=", chr)
+        # if chr == '"':
+        if chr == "'":
+            item.append(chr)
+            break
+        if chr == '"' or chr == '\\':
+            chr = '\\' + chr
+
+        item.append(chr)
+
+    # print(f'{item=}')
     return "".join(item)
 
 
@@ -37,18 +70,23 @@ def __get_bracketed(istr: Iterator[str]) -> str:
     ''' ブラケットで囲まれた文字列を取得する。
         （先頭に'{'は含まれない。末尾に'}'は含まれる）
     '''
+    # print("__get_bracketed()")
     item: list[str] = []
     for chr in __cstream(istr):
-        if chr == '{':      # ネストされた{}処理
+        if chr == '}':
+            item.append(chr)
+            break
+
+        elif chr == '"':        # ダブルクォートで囲われた文字列の処理
+            item.append(chr + __get_quoted(istr))
+        elif chr == "'":        # シングルクォートで囲われた文字列の処理
+            item.append(chr + __get_singlequoted(istr))
+        elif chr == '{':        # ブレースで囲われた文字列の処理
             item.append('{' + __get_bracketed(istr))
-        elif chr == '"':    # ダブルクォート範囲処理
-            tt = __get_quoted(istr)
-            item.append('"' + tt)
         else:
             item.append(chr)
 
-        if chr == '}':
-            break
+    # print(f'{item=}')
     return "".join(item)
 
 
@@ -57,9 +95,20 @@ def __is_onebracketed(sdata: str) -> bool:
         ex) "{A,B,C{1,2,3}}: True
             "{A,B,C}{X,Y,Z}: False
     '''
-    return sdata[0] == '{'\
-        and sdata[-1] == '}'\
-        and len(sdata) == len(__get_bracketed(iter(sdata[1:]))) + 1
+    # print("__is_onebracketed()")
+    istr = iter(sdata)
+    if next(istr, None) == '{':
+        ret = __get_bracketed(istr)
+        if ret and ret[-1] == '}' and next(istr, None) is None:
+            return True
+    return False
+
+    if len(sdata) >= 2 and sdata[0] == '{':
+        istr = iter(sdata[1:])
+        ret = __get_bracketed(istr)
+        if ret[-1] == '}' and next(istr, None) is None:
+            return True
+    return False
 
 
 def __expand_range(moto: str) -> list[str]:
@@ -101,6 +150,7 @@ def __expand_or(sdata: str) -> list[str]:
     ''' {} で囲われた文字列のカンマ展開を行う。
         展開できない場合は空のリストを返す。
     '''
+    # print("__expand_or()")
     istr = iter(sdata)
 
     ''' カンマ分割を行う
@@ -113,9 +163,11 @@ def __expand_or(sdata: str) -> list[str]:
             items.append("".join(part))
             part = []
             continue
-        elif chr == '"':
-            part.append('"' + __get_quoted(istr))
-        elif chr == '{':
+        elif chr == '"':        # ダブルクォートで囲われた文字列の処理
+            part.append(chr + __get_quoted(istr))
+        elif chr == "'":        # シングルクォートで囲われた文字列の処理
+            part.append(chr + __get_singlequoted(istr))
+        elif chr == '{':        # ブレースで囲われた文字列の処理
             part.append('{' + __get_bracketed(istr))
         else:
             part.append(chr)
@@ -178,9 +230,15 @@ def __expand_mul(sdata: str) -> list[str]:
                 witems.append(chr)
                 items.append("".join(witems))
                 witems = []
-            elif chr == '"':        # "" で囲まれた文字列処理
-                tt = __get_quoted(istr)
-                witems.append('"' + tt)
+            elif chr == '"':        # ダブルクォートで囲われた文字列の処理
+                witems.append(chr + __get_quoted(istr))
+            elif chr == "'":        # シングルクォートで囲われた文字列の処理
+                witems.append(chr + __get_singlequoted(istr))
+            # elif chr == '{':        # ブレースで囲われた文字列の処理
+            #     item.append('{' + __get_bracketed(istr))
+            # elif chr in ''''"''':        # "" で囲まれた文字列処理
+            #     tt = __get_quoted(istr, chr)
+            #     witems.append(chr + tt)
             else:
                 witems.append(chr)
         if witems:
@@ -251,6 +309,7 @@ def __expand_mul(sdata: str) -> list[str]:
 
 def __b_expansion(sdata: str) -> list[str]:
     ''' ブレース展開を行う '''
+    # print("__b_expansion()")
 
     if '{' not in sdata:    # { が一つもない
         return [sdata]          # 展開不要で終了
@@ -276,8 +335,9 @@ def b_expansion(sdata: str) -> list[str]:
 
     def __clean(sdata: str) -> str:
         ''' 文字列中の、単独の " は削除、\" は単体の " に置き換える。単体の \ は削除する。 '''
-        return "".join(['' if c == '"'
+        return "".join(['' if c in ''''"'''
                         else '"' if c == '\\"'
+                        else "'" if c == "\\'"
                         else '' if c == "\\"
                         else c[1:] if c[0] == "\\"
                         else c for c in __cstream(iter(sdata))])
@@ -288,7 +348,7 @@ def b_expansion(sdata: str) -> list[str]:
     # 空アイテムを削除する
     ret = [i for i in ret if i]
 
-    # 文字列中の、単独の " は削除、\" は単体の " に置き換える。単体の \ は削除する。
+    # 文字列中の、単独の " ' は削除、\" \' は単体の " ' に置き換える。単体の \ は削除する。
     return list(map(__clean, ret))
 
 
@@ -323,58 +383,28 @@ if __name__ == '__main__':
     # sdata = "file.txt{,.backup}"
     # sdata = "/usr/local/src/bash/{old,new,dist,bugs}"
     # sdata = "a{,,,}"
+    sdata = '''{1,'2,3'}'''
+    # sdata = '''{1,"2,3"}'''
+    sdata2 = '''{1,'2,"3'}'''
+    sdata2 = r'''{1,'2,\"3'}'''
+    # sdata2 = '''{1,"2,'3"}'''
 
     print(sys.argv)
     if len(sys.argv) > 1:
         sdata = sys.argv[1]
 
+    print()
+    print(f'{sdata}')
     items = b_expansion(sdata)
 
-    print(f'{sdata}')
-    print()
     for it in items:
         print(it)
 
-    def x__clean(sdata: str) -> str:
-        ''' 文字列中の、単独の " は削除、\" は単体の " に置き換える '''
-        print(f'{sdata=}')
-        wt: list[str] = []
-        for c in __cstream(iter(sdata)):
-            if c == '"':
-                wc = ''
-            elif c == '\\"':
-                wc = '"'
-            elif c == '\\':
-                wc = ''
-            elif c[0] == '\\':
-                wc = c[1]
-            else:
-                wc = c
-            print(f'[{c}]')
-            print(f'->[{wc}]')
-            wt.append(wc)
-        ret = "".join(wt)
-        return ret
-        print(f'[()]')
 
-        if '"' in sdata:
-            return "".join(['' if c == '"'
-                            else '"' if c == '\\"'
-                            else '' if c == '\\'
-                            else c[1] if c[0] == '\\'
-                            # else c for c in sdata])
-                            else c for c in __cstream(iter(sdata)) ])
-        print(f'{sdata=}')
-        return sdata
+    print()
+    print(f'{sdata}')
+    items = b_expansion(sdata2)
 
-    text = '''ab\cd\\e\"fxy\\"z'''
-    for c in __cstream(iter(text)):
-        print(f'[{c}]')
-    print("1:", text)
-    print("2:", x__clean(text))
+    for it in items:
+        print(it)
 
-    # text = '''\\'''
-    # for c in __cstream(iter(text)):
-    #     print(f'[{c}]')
-    # print("1:", text)
-    # print("2:", x__clean(text))
