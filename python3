@@ -1,7 +1,0 @@
-{a,b,c}
-{1..10..2}
-test{01..5}import sys
-
-for line in sys.stdin:
-    print(line)
-    
