@@ -3,15 +3,23 @@ import subprocess
 
 sep = "'''"
 
+
+def printdata(sdata: str) -> None:
+    print(sdata)
+    for i, chr in enumerate(sdata):
+        print(f'{i}: [{chr}]')
+
+
 for line in sys.stdin:
     stext = line.strip()
 
     # 頭が # はコメント行
     if stext.startswith('#'):
         print(stext)
-    
+
     # 空行と、頭がスペースの行は読み飛ばす
     elif stext and not stext.startswith(' '):
+        # printdata(stext)
         sep = '"'
         if '"' in stext:
             sep = "'"
@@ -21,7 +29,7 @@ for line in sys.stdin:
 
         testcmd = "echo " + stext
         print(testcmd)
-        subprocess.run('bash -c ' + "'''" + testcmd + "'''", shell=True)
+        subprocess.run('bash -c ' + sep + testcmd + sep, shell=True)
 
         print("btest.py " + sep + stext + sep)
 

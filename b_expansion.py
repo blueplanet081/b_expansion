@@ -20,23 +20,20 @@ def __cstream(istr: Iterator[str]) -> Iterator[str]:
 
 
 def __get_quoted(istr: Iterator[str], qchar: str = '"') -> str:
-    ''' ダブルクォート、シングルクォートで囲まれた文字列を取得する。
-        （末尾のダブルクォート、シングルクォートを含む）
+    ''' ダブルクォートで囲まれた文字列を取得する。
+        （末尾のダブルクォートを含む）
         ldata = 'abc"XYZ\\"QQQ"nnn'
         get_quoted(iter(ldata[4:]))='XYZ\\"QQQ"'
     '''
     item: list[str] = []
     for chr in __cstream(istr):
-        # if chr == '"':
-        if chr == qchar:
+        if chr == '"':
             item.append(chr)
             break
-        if chr == '"' or chr == "'":
+        if chr == "'" or chr == "\\'":
             chr = '\\' + chr
-        if qchar == '"' and chr == "\\'":
-            chr = '\\' + chr
-        if qchar == "'" and chr == '\\"':
-            chr = '\\' + chr
+        # if chr == "\\'":
+        #     chr = '\\' + chr
 
         item.append(chr)
 
@@ -49,11 +46,8 @@ def __get_singlequoted(istr: Iterator[str]) -> str:
         ldata = 'abc"XYZ\\"QQQ"nnn'
         get_quoted(iter(ldata[4:]))='XYZ\\"QQQ"'
     '''
-    # print("__get_singlequoted()")
     item: list[str] = []
     for chr in istr:
-        # print("chr=", chr)
-        # if chr == '"':
         if chr == "'":
             item.append(chr)
             break
@@ -61,8 +55,6 @@ def __get_singlequoted(istr: Iterator[str]) -> str:
             chr = '\\' + chr
 
         item.append(chr)
-
-    # print(f'{item=}')
     return "".join(item)
 
 
@@ -70,7 +62,6 @@ def __get_bracketed(istr: Iterator[str]) -> str:
     ''' ブラケットで囲まれた文字列を取得する。
         （先頭に'{'は含まれない。末尾に'}'は含まれる）
     '''
-    # print("__get_bracketed()")
     item: list[str] = []
     for chr in __cstream(istr):
         if chr == '}':
@@ -86,7 +77,6 @@ def __get_bracketed(istr: Iterator[str]) -> str:
         else:
             item.append(chr)
 
-    # print(f'{item=}')
     return "".join(item)
 
 
@@ -95,18 +85,10 @@ def __is_onebracketed(sdata: str) -> bool:
         ex) "{A,B,C{1,2,3}}: True
             "{A,B,C}{X,Y,Z}: False
     '''
-    # print("__is_onebracketed()")
     istr = iter(sdata)
     if next(istr, None) == '{':
         ret = __get_bracketed(istr)
         if ret and ret[-1] == '}' and next(istr, None) is None:
-            return True
-    return False
-
-    if len(sdata) >= 2 and sdata[0] == '{':
-        istr = iter(sdata[1:])
-        ret = __get_bracketed(istr)
-        if ret[-1] == '}' and next(istr, None) is None:
             return True
     return False
 
@@ -150,7 +132,6 @@ def __expand_or(sdata: str) -> list[str]:
     ''' {} で囲われた文字列のカンマ展開を行う。
         展開できない場合は空のリストを返す。
     '''
-    # print("__expand_or()")
     istr = iter(sdata)
 
     ''' カンマ分割を行う
@@ -355,56 +336,22 @@ def b_expansion(sdata: str) -> list[str]:
 if __name__ == '__main__':
     import sys
 
-    sdata = "{XY..{P.Q}}"
-    sdata = "X,Y{P,Q}A,{1..3}"
-    # sdata = "{P,{Q,R}X}A"
-    # sdata = "{P,Q}A,{1..{56}}"
-    # sdata = "{P,Q}A,{1..{5,6}}"
-    # sdata = "abc,{P,Q}A,{1..{5,6}}"
-    # sdata = "{XY..{P.Q}}"
-    # sdata = "{a,b{1..3{X,Y{A}QZ"
-    # sdata = "{AB{C,D{Q,X}Z}EF"
-    # sdata = '{AB"{C,D"{Q,X}Z}EF'
-    # sdata = "AB{C,D{Q,X}Z}EF}"
-    sdata = "{{P,Q}{x,y}}"
-    sdata = "A{x,y}{1,2}Z"
-    # sdata = "{{P,Q},{x,y}}"
+    # サンプルデータ
+    samples = [
+        "data{001..3}",
+        "Pre:{X,Y}and{001..3}:Post",
+        '{わかめ,"月見,たぬき"}\\"うどん\\"{01..5}',
+    ]
 
-    # sdata = "{ab,x,y,{35}{A,B}}"
-    # sdata = "ab,x,y,{35}{A,B}"
-    # sdata = "7月{01日,02日,03日}"
-    sdata = '{わかめ,"月見,たぬき"}\\"うどん\\"{01..5}'
-    # sdata = "{2021..2022}-{01..12}-file.txt"
-    # sdata = "{1..{4,8,10}}"
-    # sdata = "test{08..-04..+2}"
-    # sdata = '{AB\\"{C,D\\"{Q,X}Z}EF'
-    # sdata = "{a,}"
-    # sdata = "{{A,B}{X,Z}}"
-    # sdata = "file.txt{,.backup}"
-    # sdata = "/usr/local/src/bash/{old,new,dist,bugs}"
-    # sdata = "a{,,,}"
-    sdata = '''{1,'2,3'}'''
-    # sdata = '''{1,"2,3"}'''
-    sdata2 = '''{1,'2,"3'}'''
-    sdata2 = r'''{1,'2,\"3'}'''
-    # sdata2 = '''{1,"2,'3"}'''
-
-    print(sys.argv)
+    # 引数があれば、それをデータとして表示
     if len(sys.argv) > 1:
         sdata = sys.argv[1]
+        samples = [sdata]
 
-    print()
-    print(f'{sdata}')
-    items = b_expansion(sdata)
+    for sdata in samples:
+        print()
+        print(f'{sdata}')
+        items = b_expansion(sdata)
 
-    for it in items:
-        print(it)
-
-
-    print()
-    print(f'{sdata}')
-    items = b_expansion(sdata2)
-
-    for it in items:
-        print(it)
-
+        for it in items:
+            print(it)

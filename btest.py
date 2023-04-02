@@ -11,6 +11,7 @@ if len(sys.argv) > 1:
 
     for it in items:
         print(it, end=" ")
+    print()
 
 else:
     print("b_extension 試験用プログラム")
