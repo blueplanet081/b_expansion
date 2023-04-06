@@ -27,6 +27,7 @@ def __get_quoted(istr: Iterator[str], qchar: str = '"') -> str:
     '''
     item: list[str] = []
     for chr in __cstream(istr):
+        # print(f'-->{chr=}')
         if chr == '"':
             item.append(chr)
             break
@@ -74,6 +75,24 @@ def __get_bracketed(istr: Iterator[str]) -> str:
             item.append(chr + __get_singlequoted(istr))
         elif chr == '{':        # ブレースで囲われた文字列の処理
             item.append('{' + __get_bracketed(istr))
+        else:
+            item.append(chr)
+
+    return "".join(item)
+
+
+def __sweep_quoted(istr: Iterator[str]) -> str:
+    ''' シングル/ダブルクォートで囲われた文字列を処理する。
+    '''
+    item: list[str] = []
+    for chr in __cstream(istr):
+        print(f'{chr=}')
+        if chr == '"':        # ダブルクォートで囲われた文字列の処理
+            print('hit "')
+            item.append(chr + __get_quoted(istr))
+            print(f'{item=}')
+        elif chr == "'":        # シングルクォートで囲われた文字列の処理
+            item.append(chr + __get_singlequoted(istr))
         else:
             item.append(chr)
 
@@ -293,7 +312,11 @@ def __b_expansion(sdata: str) -> list[str]:
     # print("__b_expansion()")
 
     if '{' not in sdata:    # { が一つもない
-        return [sdata]          # 展開不要で終了
+        print("Hi!")
+        print(f'{sdata=}')
+        # odata = __sweep_quoted(iter(sdata))
+        # print(f'{odata=}')
+        return [__sweep_quoted(iter(sdata))]          # 展開不要で終了
 
     ''' 全体が {} で囲われた文字列を展開する '''
     if __is_onebracketed(sdata):      # 全体が {} 囲われている場合
@@ -325,7 +348,7 @@ def b_expansion(sdata: str) -> list[str]:
 
     # ブレース展開を行う
     ret = __b_expansion(sdata)
-
+    print(f'{ret=}')
     # 空アイテムを削除する
     ret = [i for i in ret if i]
 
